@@ -61,10 +61,13 @@ namespace RobotController
         }
         public MyQuat Conjugate()
         {
-            x = -x;
-            y = -y;
-            z = -z;
-            return this;
+            MyQuat inverse;
+            inverse.w = w;
+            inverse.x = -x;
+            inverse.y = -y;
+            inverse.z = -z;
+
+            return inverse;
         }
 
         public static MyQuat Cross(MyQuat a, MyQuat b)
@@ -144,6 +147,7 @@ namespace RobotController
 
         private static MyQuat twist;
         private static MyQuat swing;
+        private static MyQuat _rot2;
 
         #region public methods
 
@@ -225,19 +229,41 @@ namespace RobotController
 
         public bool PickStudAnimVertical(out MyQuat rot0, out MyQuat rot1, out MyQuat rot2, out MyQuat rot3)
         {
-            bool myCondition = false;
-            //todo: add a check for your condition
 
-
-
-            while (myCondition)
+            if (!canPlayExercice3)
             {
-                //todo: add your code here
-
-
+                rot0 = NullQ;
+                rot1 = NullQ;
+                rot2 = NullQ;
+                rot3 = NullQ;
+                return false;
             }
 
-            //todo: remove this once your code works.
+            float animationDuration = 1000;
+            if (startTimeAnimation1 <= 0)
+            {
+                startTimeAnimation1 = TimeSinceMidnight;
+            }
+
+
+            float lerpValue = (TimeSinceMidnight - startTimeAnimation1) / animationDuration;
+
+            if (lerpValue < 1)
+            {
+                //todo: add your code here
+                rot0 = NullQ;
+                rot0 = Rotate(rot0, new MyVec(0f, 1f, 0f), (41 - 74) * lerpValue + 74);
+                rot1 = Rotate(rot0, new MyVec(1, 0, 0), (6 + 7) * lerpValue - 7);
+                rot2 = Rotate(rot1, new MyVec(1, 0, 0), (65 - 76) * lerpValue + 76);
+                _rot2 = rot2;
+                swing = Rotate(rot2, new MyVec(1f, 0f, 0f), (32 - 40) * lerpValue + 40);
+                twist = Rotate(swing, new MyVec(0f, 1f, 0f), (0 - 90) * lerpValue);
+                rot3 = twist * swing;
+                return true;
+            }
+
+            startTimeAnimation1 = 0;
+            canPlayExercice3 = false;
             rot0 = NullQ;
             rot1 = NullQ;
             rot2 = NullQ;
@@ -249,11 +275,13 @@ namespace RobotController
 
         public static MyQuat GetSwing(MyQuat rot3)
         {
+
             return MyQuat.Normalize(twist.Inverse() * rot3);
         }
         public static MyQuat GetTwist(MyQuat rot3)
         {
-            return MyQuat.Normalize(swing.Inverse() * rot3);
+            return MyQuat.Normalize( rot3 * swing.Inverse());
+
 
         }
         #endregion
